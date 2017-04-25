@@ -98,8 +98,10 @@ end
 --              req.cmd_version: http version (usually 'HTTP/1.1')
 function _M.read_method (req)
         local err
+        req.rawline={}
         req.cmdline, err = req.socket:receive ()
-
+        req.rawrequest[#req.rawrequest+1]=req.cmdline
+        
         if not req.cmdline then return nil end
         req.cmd_mth, req.cmd_url, req.cmd_version = unpack (_M.strsplit (req.cmdline))
         req.cmd_mth = string.upper (req.cmd_mth or 'GET')
@@ -119,6 +121,8 @@ function _M.read_headers (req)
 
         while 1 do
                 local l,err = req.socket:receive ()
+                req.rawrequest[#req.rawrequest+1]=l
+                
                 if (not l or l == "") then
                         req.headers = headers
                         return
@@ -187,7 +191,7 @@ local function send_res_headers (res)
 
         if package.loaded["xavante.cookies"] then
           local cookies = require "xavante.cookies"
-          cookies.set_res_cookies (res)
+          xavante.cookies.set_res_cookies (res)
         end
 
         res.statusline = res.statusline or "HTTP/1.1 200 OK"
